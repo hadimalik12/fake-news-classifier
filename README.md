@@ -6,9 +6,11 @@ This project studies how different text classification methods perform on short 
 
 > **Status:** Project proposal. The models, experiments, and results described below are planned; this repository does not yet contain a completed implementation or benchmark results.
 
-## Research question
+## Research questions
 
-Can a fine-tuned DistilBERT model improve six class misinformation classification over TF-IDF with logistic regression and an LSTM or BiLSTM? We will also examine how statement length and transformer fine-tuning affect performance.
+1. **Model comparison:** How does a fine-tuned DistilBERT classifier compare with TF-IDF plus logistic regression and an LSTM or BiLSTM on six class LIAR statement classification?
+2. **Statement length:** How does statement length affect each model's performance, and does the relative ranking of the models change across short, medium, and long statements?
+3. **Task-specific fine-tuning:** How much does fully fine-tuning DistilBERT improve performance over keeping its encoder frozen and training only the classification head?
 
 Our hypothesis is that fine-tuned DistilBERT will perform best overall because its pretrained representations capture contextual relationships that a bag-of-words model does not explicitly represent and that a recurrent model must learn from a relatively small task dataset.
 
