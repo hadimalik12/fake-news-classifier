@@ -4,7 +4,19 @@
 
 This project studies how different text classification methods perform on short fact-checked statements. Using the [LIAR dataset](https://aclanthology.org/P17-2067/), we plan to compare a traditional machine learning baseline, a recurrent neural network, and a pretrained transformer under the same data splits and evaluation protocol.
 
-> **Status:** Project proposal. The models, experiments, and results described below are planned; this repository does not yet contain a completed implementation or benchmark results.
+> **Status:** Approach frozen in [docs/approach.md](docs/approach.md). Shared skeleton and LIAR data setup are in place (Steps 2–3). Training and benchmark results are not implemented yet.
+
+Shared constants live in [config.yaml](config.yaml). The training entry points read that file:
+
+```bash
+pip install -r requirements.txt
+python -m deep_truth.prepare_data
+python -m deep_truth
+python -m deep_truth.train_tfidf
+python -m deep_truth.train_bilstm
+python -m deep_truth.train_distilbert --run distilbert_frozen
+python -m deep_truth.train_distilbert --run distilbert_finetuned
+```
 
 ## Research questions
 
@@ -13,6 +25,8 @@ This project studies how different text classification methods perform on short 
 3. **Task-specific fine-tuning:** How much does fully fine-tuning DistilBERT improve performance over keeping its encoder frozen and training only the classification head?
 
 Our hypothesis is that fine-tuned DistilBERT will perform best overall because its pretrained representations capture contextual relationships that a bag-of-words model does not explicitly represent and that a recurrent model must learn from a relatively small task dataset.
+
+These questions are operationalized as three testable hypotheses, with the data, model, tuning, and evaluation protocol fixed, in [docs/approach.md](docs/approach.md).
 
 ## Dataset and task
 
