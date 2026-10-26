@@ -4,7 +4,21 @@
 
 This project studies how different text classification methods perform on short fact-checked statements. Using the [LIAR dataset](https://aclanthology.org/P17-2067/), we plan to compare a traditional machine learning baseline, a recurrent neural network, and a pretrained transformer under the same data splits and evaluation protocol.
 
-> **Status:** Project proposal. The models, experiments, and results described below are planned; this repository does not yet contain a completed implementation or benchmark results.
+> **Status:** Approach frozen in [docs/approach.md](docs/approach.md). Shared skeleton and LIAR data setup are in place (Steps 2–3). Training and benchmark results are not implemented yet.
+
+Shared constants live in [config.yaml](config.yaml). The training entry points read that file:
+
+```bash
+pip install -r requirements.txt
+python -m deep_truth.prepare_data
+python -m deep_truth
+python -m deep_truth.train_tfidf
+python -m deep_truth.train_bilstm
+python -m deep_truth.train_distilbert --run distilbert_frozen
+python -m deep_truth.train_distilbert --run distilbert_finetuned
+```
+
+The LIAR statement files are not stored in git. `python -m deep_truth.prepare_data` reads the official archive URL in `config.yaml`, downloads it, and writes `data/liar/train.tsv`, `valid.tsv`, and `test.tsv` on the local machine. Each person runs that command after cloning. The training-set length cutoffs are already saved in `config.yaml`, and the command checks the new download against those saved values. `python -m deep_truth` confirms the setup.
 
 ## Research questions
 
@@ -14,9 +28,11 @@ This project studies how different text classification methods perform on short 
 
 Our hypothesis is that fine-tuned DistilBERT will perform best overall because its pretrained representations capture contextual relationships that a bag-of-words model does not explicitly represent and that a recurrent model must learn from a relatively small task dataset.
 
+These questions are operationalized as three testable hypotheses, with the data, model, tuning, and evaluation protocol fixed, in [docs/approach.md](docs/approach.md).
+
 ## Dataset and task
 
-LIAR contains **12,836** short English-language statements collected from PolitiFact between 2007 and 2016. We will use its official splits: **10,269 training**, **1,284 validation**, and **1,283 test** examples. Each model will predict one of six truthfulness labels:
+LIAR contains **12,836** short English-language statements collected from PolitiFact between 2007 and 2016. We will use its official splits: **10,269 training**, **1,284 validation**, and **1,283 test** examples. Those files are downloaded locally with `python -m deep_truth.prepare_data` and are not committed. Each model will predict one of six truthfulness labels:
 
 `pants-fire` · `false` · `barely-true` · `half-true` · `mostly-true` · `true`
 

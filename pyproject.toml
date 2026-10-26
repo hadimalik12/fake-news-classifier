@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deep-truth"
+version = "0.1.0"
+description = "Controlled comparison of text classifiers on the LIAR dataset."
+requires-python = ">=3.10"
+dependencies = [
+  "numpy==1.26.4",
+  "pandas==2.3.3",
+  "scikit-learn==1.7.2",
+  "PyYAML==6.0.3",
+  "torch==2.8.0",
+  "transformers==4.57.6",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,164 @@
+# Shared constants for the Deep Truth experiment.
+# Training code reads this file. Do not duplicate these values in scripts.
+# q1, q2, pad_length, and distilbert max_length are filled by python -m deep_truth.prepare_data.
+# That command also downloads the LIAR TSV files into data/liar/. Those files are not committed.
+
+seed: 42
+
+dataset:
+  name: LIAR
+  url: "https://www.cs.ucsb.edu/~william/data/liar_dataset.zip"
+  files:
+    train: train.tsv
+    validation: valid.tsv
+    test: test.tsv
+
+metric:
+  average: macro
+  zero_division: 0
+  comparison_decimals: 4
+  early_stopping_min_delta: 0.0001
+
+labels:
+  - "pants-fire"
+  - "false"
+  - "barely-true"
+  - "half-true"
+  - "mostly-true"
+  - "true"
+
+columns:
+  id: 0
+  label: 1
+  statement: 2
+
+splits:
+  train:
+    path: data/liar/train.tsv
+    examples: 10269
+  validation:
+    path: data/liar/valid.tsv
+    examples: 1284
+  test:
+    path: data/liar/test.tsv
+    examples: 1283
+
+predictions:
+  directory: results/predictions
+  columns:
+    - id
+    - statement
+    - word_count
+    - length_bin
+    - label
+    - prediction
+
+runs:
+  all:
+    - tfidf_logreg
+    - bilstm
+    - distilbert_frozen
+    - distilbert_finetuned
+  model_comparison:
+    - tfidf_logreg
+    - bilstm
+    - distilbert_finetuned
+  fine_tuning:
+    - distilbert_frozen
+    - distilbert_finetuned
+
+length_bins:
+  names:
+    - short
+    - medium
+    - long
+  quantile_method: linear
+  probabilities:
+    - "1/3"
+    - "2/3"
+  q1: 14
+  q2: 20
+
+adjacent_labels:
+  - ["pants-fire", "false"]
+  - ["false", "barely-true"]
+  - ["barely-true", "half-true"]
+  - ["half-true", "mostly-true"]
+  - ["mostly-true", "true"]
+
+selection:
+  monitor: macro_f1
+  tie_break:
+    - {field: macro_f1, order: desc, split: validation}
+    - {field: accuracy, order: desc, split: validation}
+    - {field: learning_rate, order: asc}
+    - {field: batch_size, order: asc}
+    - {field: max_features, order: asc}
+    - {field: ngram_range, order: asc}
+    - {field: min_df, order: asc}
+    - {field: C, order: asc}
+    - {field: hidden_size, order: asc}
+    - {field: dropout, order: asc}
+
+tfidf:
+  lowercase: true
+  analyzer: word
+  norm: l2
+  use_idf: true
+  solver: lbfgs
+  max_iter: 2000
+  grid:
+    ngram_range:
+      - [1, 1]
+      - [1, 2]
+    min_df: [2, 5]
+    max_features: [10000, 50000]
+    C: [0.1, 1.0, 10.0]
+
+bilstm:
+  min_token_count: 2
+  embedding_dim: 100
+  glove_path: data/glove/glove.6B.100d.txt
+  oov_mean: 0.0
+  oov_std: 0.05
+  pad_token: "<pad>"
+  unk_token: "<unk>"
+  pad_percentile: 95
+  pad_length_floor: 8
+  pad_length: 33
+  truncate_end: true
+  weight_decay: 0.0
+  grad_clip: 1.0
+  max_epochs: 15
+  patience: 3
+  grid:
+    learning_rate: [0.001, 0.0001]
+    hidden_size: [64, 128]
+    dropout: [0.3, 0.5]
+    batch_size: [32, 64]
+
+distilbert:
+  model_name: distilbert-base-uncased
+  num_labels: 6
+  problem_type: single_label_classification
+  max_length_percentile: 99
+  max_length_if_percentile_at_most_64: 64
+  max_length_otherwise: 128
+  max_length: 64
+  weight_decay: 0.01
+  grad_clip: 1.0
+  finetuned_warmup_ratio: 0.1
+  frozen:
+    max_epochs: 10
+    patience: 2
+    constant_learning_rate: true
+    grid:
+      learning_rate: [0.001, 0.0005, 0.0001]
+      batch_size: [16, 32]
+  finetuned:
+    max_epochs: 4
+    patience: 2
+    constant_learning_rate: false
+    grid:
+      learning_rate: [0.00002, 0.00003, 0.00005]
+      batch_size: [16, 32]
