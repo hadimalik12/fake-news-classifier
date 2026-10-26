@@ -32,6 +32,8 @@ Use the official LIAR release files:
 | Validation | `data/liar/valid.tsv` | 1,284 |
 | Test | `data/liar/test.tsv` | 1,283 |
 
+These TSV files are local data, not repository files. From the repository root, `python -m deep_truth.prepare_data` downloads the official archive URL in `config.yaml` and writes the three splits into `data/liar/`. Run it once on each machine. The length cutoffs already stored in `config.yaml` were fit on the training split, and this command checks that a new download reproduces them.
+
 The files are tab-separated and have no header. Read these columns only:
 
 | Index | Field | Use |

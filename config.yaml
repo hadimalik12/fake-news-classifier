@@ -1,6 +1,7 @@
 # Shared constants for the Deep Truth experiment.
 # Training code reads this file. Do not duplicate these values in scripts.
 # q1, q2, pad_length, and distilbert max_length are filled by python -m deep_truth.prepare_data.
+# That command also downloads the LIAR TSV files into data/liar/. Those files are not committed.
 
 seed: 42
 

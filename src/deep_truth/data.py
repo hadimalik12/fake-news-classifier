@@ -33,7 +33,7 @@ def read_split(config: Config, split: str) -> pd.DataFrame:
     path = config.split_path(split)
     if not path.is_file():
         raise FileNotFoundError(
-            f"Missing {path}. Place the official LIAR files under data/liar/ before loading splits."
+            f"Missing {path}. From the repository root, run python -m deep_truth.prepare_data. That downloads the official LIAR files into data/liar/."
         )
     columns = config.data["columns"]
     frame = pd.read_csv(
