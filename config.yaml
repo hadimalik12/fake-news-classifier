@@ -1,17 +1,32 @@
 # Shared constants for the Deep Truth experiment.
 # Training code reads this file. Do not duplicate these values in scripts.
-# q1, q2, pad_length, and distilbert max_length are filled by python -m deep_truth.prepare_data.
-# That command also downloads the LIAR TSV files into data/liar/. Those files are not committed.
+# q1, q2, pad_length, and distilbert max_length are filled by ./scripts/prepare_data.sh.
+# External data is downloaded by ./scripts/download_data.sh and is not committed.
 
 seed: 42
 
 dataset:
   name: LIAR
-  url: "https://www.cs.ucsb.edu/~william/data/liar_dataset.zip"
+  urls:
+    - "https://www.cs.ucsb.edu/~william/data/liar_dataset.zip"
+  archive_path: data/raw/liar/liar_dataset.zip
+  archive_sha256: "611c1addad919743dde15822b87a60bfb760d8f85597f25289e34621800654c7"
   files:
     train: train.tsv
     validation: valid.tsv
     test: test.tsv
+
+embeddings:
+  glove:
+    urls:
+      - "https://downloads.cs.stanford.edu/nlp/data/glove.6B.zip"
+      - "https://nlp.stanford.edu/data/glove.6B.zip"
+    archive_path: data/external/glove/glove.6B.zip
+    archive_sha256: "617afb2fe6cbd085c235baf7a465b96f4112bd7f7ccb2b2cbd649fed9cbcf2fb"
+    file: glove.6B.100d.txt
+    path: data/external/glove/glove.6B.100d.txt
+    dimensions: 100
+    vocabulary_size: 400000
 
 metric:
   average: macro
@@ -34,13 +49,13 @@ columns:
 
 splits:
   train:
-    path: data/liar/train.tsv
+    path: data/raw/liar/train.tsv
     examples: 10269
   validation:
-    path: data/liar/valid.tsv
+    path: data/raw/liar/valid.tsv
     examples: 1284
   test:
-    path: data/liar/test.tsv
+    path: data/raw/liar/test.tsv
     examples: 1283
 
 predictions:
@@ -118,7 +133,6 @@ tfidf:
 bilstm:
   min_token_count: 2
   embedding_dim: 100
-  glove_path: data/glove/glove.6B.100d.txt
   oov_mean: 0.0
   oov_std: 0.05
   pad_token: "<pad>"
