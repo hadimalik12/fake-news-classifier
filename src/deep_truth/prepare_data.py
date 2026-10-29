@@ -1,52 +1,22 @@
-"""Download the official LIAR splits and write training-only length settings into config.yaml."""
+"""Validate downloaded data and write training-only length settings into config.yaml."""
 
 from __future__ import annotations
 
 import math
 import re
-import urllib.request
-import zipfile
 from pathlib import Path
 
 import numpy as np
 from transformers import AutoTokenizer
 
 from deep_truth.config import load_config
-from deep_truth.data import (
+from deep_truth.data.download import ensure_data_files
+from deep_truth.data.liar import (
     add_length_bins,
     check_split,
     read_split,
     training_length_statistics,
 )
-
-
-def ensure_liar_files(config) -> None:
-    destination = config.split_path("train").parent
-    expected = {
-        split: destination / config.data["dataset"]["files"][split]
-        for split in ("train", "validation", "test")
-    }
-    if all(path.is_file() for path in expected.values()):
-        return
-    destination.mkdir(parents=True, exist_ok=True)
-    archive_path = destination / "liar_dataset.zip"
-    url = config.data["dataset"]["url"]
-    request = urllib.request.Request(url, headers={"User-Agent": "deep-truth-data-setup"})
-    with urllib.request.urlopen(request, timeout=120) as response, archive_path.open("wb") as handle:
-        handle.write(response.read())
-    wanted = {config.data["dataset"]["files"][split]: expected[split] for split in expected}
-    with zipfile.ZipFile(archive_path) as archive:
-        found: set[str] = set()
-        for member in archive.namelist():
-            name = Path(member).name
-            if name not in wanted:
-                continue
-            with archive.open(member) as source, wanted[name].open("wb") as target:
-                target.write(source.read())
-            found.add(name)
-    missing = sorted(set(wanted) - found)
-    if missing:
-        raise FileNotFoundError(f"The LIAR archive did not contain {missing}.")
 
 
 def distilbert_max_length(statements: list[str], config) -> dict[str, float | int]:
@@ -80,7 +50,9 @@ def format_number(value: float) -> str:
 
 
 def write_derived_settings(config_path: Path, q1: float, q2: float, pad_length: int, max_length: int) -> None:
-    text = config_path.read_text(encoding="utf-8")
+    raw = config_path.read_bytes()
+    newline = "\r\n" if b"\r\n" in raw else "\n"
+    text = raw.decode("utf-8").replace("\r\n", "\n")
     updates = {
         "q1": format_number(q1),
         "q2": format_number(q2),
@@ -92,7 +64,7 @@ def write_derived_settings(config_path: Path, q1: float, q2: float, pad_length: 
         text, count = pattern.subn(rf"\g<1>{value}", text, count=1)
         if count != 1:
             raise RuntimeError(f"Expected exactly one {key} entry in {config_path}.")
-    config_path.write_text(text, encoding="utf-8")
+    config_path.write_bytes(text.replace("\n", newline).encode("utf-8"))
 
 
 def count_labels(frame, labels: list[str]) -> dict[str, int]:
@@ -134,7 +106,7 @@ def build_report(config, splits: dict, length_stats: dict, token_stats: dict) ->
 
 def main() -> None:
     config = load_config()
-    ensure_liar_files(config)
+    ensure_data_files(config)
     splits = {split: read_split(config, split) for split in ("train", "validation", "test")}
     for split, frame in splits.items():
         check_split(config, split, frame)

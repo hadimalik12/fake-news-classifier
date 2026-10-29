@@ -4,21 +4,49 @@
 
 This project studies how different text classification methods perform on short fact-checked statements. Using the [LIAR dataset](https://aclanthology.org/P17-2067/), we plan to compare a traditional machine learning baseline, a recurrent neural network, and a pretrained transformer under the same data splits and evaluation protocol.
 
-> **Status:** Approach frozen in [docs/approach.md](docs/approach.md). Shared skeleton and LIAR data setup are in place (Steps 2–3). Training and benchmark results are not implemented yet.
+> **Status:** The approach is frozen in [docs/approach.md](docs/approach.md), and the reproducible environment and data setup are implemented. Model training and benchmark results are not implemented yet.
 
-Shared constants live in [config.yaml](config.yaml). The training entry points read that file:
+## Setup and data preparation
+
+From a fresh clone, run:
 
 ```bash
-pip install -r requirements.txt
-python -m deep_truth.prepare_data
-python -m deep_truth
-python -m deep_truth.train_tfidf
-python -m deep_truth.train_bilstm
-python -m deep_truth.train_distilbert --run distilbert_frozen
-python -m deep_truth.train_distilbert --run distilbert_finetuned
+./scripts/setup.sh
+./scripts/download_data.sh
+./scripts/prepare_data.sh
 ```
 
-The LIAR statement files are not stored in git. `python -m deep_truth.prepare_data` reads the official archive URL in `config.yaml`, downloads it, and writes `data/liar/train.tsv`, `valid.tsv`, and `test.tsv` on the local machine. Each person runs that command after cloning. The training-set length cutoffs are already saved in `config.yaml`, and the command checks the new download against those saved values. `python -m deep_truth` confirms the setup.
+`setup.sh` creates `.venv` and installs the project. `download_data.sh` downloads the official LIAR files and GloVe 6B 100-dimensional embeddings, verifies the source archive checksums, extracts only the required files, and validates their structure. Downloads are idempotent and stored under `data/`, which is ignored by Git.
+
+`prepare_data.sh` validates the official LIAR splits, fits statement-length settings using the training split only, confirms the saved settings in [config.yaml](config.yaml), and writes `results/data_setup_report.txt`. It also initializes the pretrained DistilBERT tokenizer used to calculate the training token-length percentile.
+
+The data layout is:
+
+```text
+data/
+├── raw/liar/
+│   ├── liar_dataset.zip
+│   ├── train.tsv
+│   ├── valid.tsv
+│   └── test.tsv
+└── external/glove/
+    ├── glove.6B.zip
+    └── glove.6B.100d.txt
+```
+
+Shared paths, source URLs, checksums, labels, hyperparameter grids, and derived settings live in [config.yaml](config.yaml). No training shell scripts are included yet because the model-fitting implementations are not complete.
+
+## Repository layout
+
+```text
+scripts/                 Reproducible environment and data commands
+src/deep_truth/data/     Downloading, loading, and validating data
+src/deep_truth/          Existing shared configuration, metrics, and run skeletons
+docs/                    Frozen experimental approach
+data/                    Downloaded source data (not committed)
+artifacts/               Future model artifacts (not committed)
+results/                 Generated reports and results (not committed)
+```
 
 ## Research questions
 
@@ -32,7 +60,7 @@ These questions are operationalized as three testable hypotheses, with the data,
 
 ## Dataset and task
 
-LIAR contains **12,836** short English-language statements collected from PolitiFact between 2007 and 2016. We will use its official splits: **10,269 training**, **1,284 validation**, and **1,283 test** examples. Those files are downloaded locally with `python -m deep_truth.prepare_data` and are not committed. Each model will predict one of six truthfulness labels:
+LIAR contains **12,836** short English-language statements collected from PolitiFact between 2007 and 2016. We will use its official splits: **10,269 training**, **1,284 validation**, and **1,283 test** examples. Those files are downloaded locally with `./scripts/download_data.sh` and are not committed. Each model will predict one of six truthfulness labels:
 
 `pants-fire` · `false` · `barely-true` · `half-true` · `mostly-true` · `true`
 

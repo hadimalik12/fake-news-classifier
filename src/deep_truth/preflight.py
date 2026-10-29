@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 from deep_truth.config import grid_size, iter_grid, load_config, parse_probability
-from deep_truth.data import assign_length_bin, read_split, training_length_statistics, word_count
+from deep_truth.data.liar import assign_length_bin, read_split, training_length_statistics, word_count
 from deep_truth.metrics import (
     compute_metrics,
     hypothesis_1_supported,

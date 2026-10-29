@@ -28,11 +28,11 @@ Use the official LIAR release files:
 
 | Split | File | Examples |
 | --- | --- | --- |
-| Train | `data/liar/train.tsv` | 10,269 |
-| Validation | `data/liar/valid.tsv` | 1,284 |
-| Test | `data/liar/test.tsv` | 1,283 |
+| Train | `data/raw/liar/train.tsv` | 10,269 |
+| Validation | `data/raw/liar/valid.tsv` | 1,284 |
+| Test | `data/raw/liar/test.tsv` | 1,283 |
 
-These TSV files are local data, not repository files. From the repository root, `python -m deep_truth.prepare_data` downloads the official archive URL in `config.yaml` and writes the three splits into `data/liar/`. Run it once on each machine. The length cutoffs already stored in `config.yaml` were fit on the training split, and this command checks that a new download reproduces them.
+These TSV files are local data, not repository files. From the repository root, `./scripts/download_data.sh` downloads and validates the official LIAR archive and writes the three splits into `data/raw/liar/`. It also downloads the required GloVe file into `data/external/glove/`. Run `./scripts/prepare_data.sh` afterward to reproduce and check the training-derived length settings stored in `config.yaml`.
 
 The files are tab-separated and have no header. Read these columns only:
 

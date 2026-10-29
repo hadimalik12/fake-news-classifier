@@ -16,7 +16,7 @@ from deep_truth.config import Config, parse_probability
 
 
 def word_count(statement: str) -> int:
-    """Whitespace word count used for length bins and BiLSTM padding."""
+    """Return the whitespace-delimited word count used by the experiment."""
     return len(statement.split())
 
 
@@ -33,7 +33,8 @@ def read_split(config: Config, split: str) -> pd.DataFrame:
     path = config.split_path(split)
     if not path.is_file():
         raise FileNotFoundError(
-            f"Missing {path}. From the repository root, run python -m deep_truth.prepare_data. That downloads the official LIAR files into data/liar/."
+            f"Missing {path}. From the repository root, run ./scripts/download_data.sh "
+            "and then ./scripts/prepare_data.sh."
         )
     columns = config.data["columns"]
     frame = pd.read_csv(
@@ -85,5 +86,7 @@ def add_length_bins(config: Config, frame: pd.DataFrame) -> pd.DataFrame:
     binned = frame.copy()
     if "word_count" not in binned.columns:
         binned["word_count"] = binned["statement"].map(word_count)
-    binned["length_bin"] = binned["word_count"].map(lambda count: assign_length_bin(int(count), q1, q2))
+    binned["length_bin"] = binned["word_count"].map(
+        lambda count: assign_length_bin(int(count), q1, q2)
+    )
     return binned
