@@ -1,1 +1,1 @@
-"""Dataset download, loading, validation, and length utilities."""
+"""Dataset download, loading, validation, and model input utilities."""
