@@ -36,11 +36,44 @@ data/
 
 Shared paths, source URLs, checksums, labels, hyperparameter grids, and derived settings live in [config.yaml](config.yaml). No training shell scripts are included yet because the model-fitting implementations are not complete.
 
+## Shared model inputs
+
+The shared data layer constructs model-specific views over the same validated examples:
+
+```python
+from deep_truth.config import load_config
+from deep_truth.data.loaders import (
+    make_loaders,
+    prepare_bilstm_data,
+    prepare_distilbert_data,
+    prepare_tfidf_data,
+)
+
+config = load_config()
+tfidf_data = prepare_tfidf_data(config)
+bilstm_data = prepare_bilstm_data(config)
+distilbert_data = prepare_distilbert_data(config)
+
+bilstm_loaders = make_loaders(
+    bilstm_data.datasets,
+    batch_size=32,
+    seed=config.seed,
+)
+```
+
+Training and validation are loaded by default. The held-out test split must be requested explicitly with `include_test=True`. BiLSTM vocabulary construction and GloVe alignment use training statements only. Each dataset keeps an aligned metadata table containing the statement ID, raw text, word count, length bin, and string label for later prediction export.
+
+Run the data-interface tests with:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
+
 ## Repository layout
 
 ```text
 scripts/                 Reproducible environment and data commands
-src/deep_truth/data/     Downloading, loading, and validating data
+src/deep_truth/data/     Downloading, validation, vocabularies, and model inputs
 src/deep_truth/          Existing shared configuration, metrics, and run skeletons
 docs/                    Frozen experimental approach
 data/                    Downloaded source data (not committed)
