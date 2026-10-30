@@ -4,7 +4,7 @@
 
 This project studies how different text classification methods perform on short fact-checked statements. Using the [LIAR dataset](https://aclanthology.org/P17-2067/), we plan to compare a traditional machine learning baseline, a recurrent neural network, and a pretrained transformer under the same data splits and evaluation protocol.
 
-> **Status:** The approach is frozen in [docs/approach.md](docs/approach.md), and the reproducible environment and data setup are implemented. Model training and benchmark results are not implemented yet.
+> **Status:** The approach is frozen in [docs/approach.md](docs/approach.md). Data setup, shared inputs, TF-IDF training, and BiLSTM training are implemented. DistilBERT training and final test benchmark results are not implemented yet.
 
 ## Setup and data preparation
 
@@ -34,7 +34,36 @@ data/
     └── glove.6B.100d.txt
 ```
 
-Shared paths, source URLs, checksums, labels, hyperparameter grids, and derived settings live in [config.yaml](config.yaml). No training shell scripts are included yet because the model-fitting implementations are not complete.
+Shared paths, source URLs, checksums, labels, hyperparameter grids, and derived settings live in [config.yaml](config.yaml).
+
+## Train the TF-IDF baseline
+
+After data preparation, run:
+
+```bash
+.venv/bin/python -m deep_truth.train_tfidf
+```
+
+This fits all 24 TF-IDF/logistic regression configurations on training statements and selects the best using validation macro-F1, followed by the configured tie-break rules. Validation scores are compared at four decimal places. The test split is never loaded, and the winning pipeline is not refitted on validation.
+
+The saved pipeline is `artifacts/tfidf_logreg/model.joblib`. Search records (`search.json` and `search.csv`), the selected settings and config snapshot (`summary.json`), and validation predictions (`validation_predictions.csv`) are written to `results/tfidf_logreg/`. Re-running training overwrites these outputs. Convergence warnings are displayed and recorded in search results.
+
+Use `--dry-run` to inspect the grid without fitting. Final held-out test evaluation will be implemented separately after all four winning models are selected.
+
+## Train the BiLSTM
+
+```bash
+.venv/bin/python -m deep_truth.train_bilstm --smoke-test
+.venv/bin/python -m deep_truth.train_bilstm
+```
+
+The smoke test runs one configuration for one epoch and writes only to `artifacts/bilstm_smoke/` and `results/bilstm_smoke/`. It verifies the training path; its scores are not a completed experiment.
+
+The full run searches all 16 configured settings, up to 15 epochs each, with patience 3. It uses trainable GloVe embeddings, a single bidirectional LSTM with packed sequences to exclude padding, dropout, and a six-class head. Training uses cross-entropy, Adam, and gradient clipping. Validation macro-F1 selects checkpoints using the shared tie-break rules; a separate minimum-improvement threshold controls early stopping. The test split is never loaded.
+
+The winning checkpoint at `artifacts/bilstm/model.pt` contains model weights, vocabulary, selected parameters, epoch, validation metrics, and the config snapshot. Epoch histories and search results, a summary, and validation predictions go in `results/bilstm/`. The saved winner is reloaded and its validation metrics verified before export. Re-running overwrites those outputs.
+
+Automatic device selection uses CUDA when available and CPU otherwise (including on Macs). Override with `--device cpu` or `--device cuda`; `--threads` controls CPU threads (default 4). Use `--dry-run` to inspect the grid without training. The full search can take substantially longer than TF-IDF.
 
 ## Shared model inputs
 

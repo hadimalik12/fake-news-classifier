@@ -136,8 +136,8 @@ def check_length_and_metrics() -> None:
 def main() -> None:
     check_config()
     check_length_and_metrics()
-    tfidf_main()
-    bilstm_main()
+    tfidf_main(["--dry-run"])
+    bilstm_main(["--dry-run"])
     distilbert_main(["--run", "distilbert_frozen"])
     distilbert_main(["--run", "distilbert_finetuned"])
     print("Skeleton checks passed.")
