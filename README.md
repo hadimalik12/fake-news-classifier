@@ -4,7 +4,7 @@
 
 This project studies how different text classification methods perform on short fact-checked statements. Using the [LIAR dataset](https://aclanthology.org/P17-2067/), we plan to compare a traditional machine learning baseline, a recurrent neural network, and a pretrained transformer under the same data splits and evaluation protocol.
 
-> **Status:** The approach is frozen in [docs/approach.md](docs/approach.md). Data setup, shared inputs, TF-IDF training, and BiLSTM training are implemented. DistilBERT training and final test benchmark results are not implemented yet.
+> **Status:** The approach is frozen in [docs/approach.md](docs/approach.md). Data setup, shared inputs, and training for TF-IDF, BiLSTM, and both DistilBERT variants are implemented. Full experiment runs and final held-out test evaluation remain to be completed.
 
 ## Setup and data preparation
 
@@ -64,6 +64,25 @@ The full run searches all 16 configured settings, up to 15 epochs each, with pat
 The winning checkpoint at `artifacts/bilstm/model.pt` contains model weights, vocabulary, selected parameters, epoch, validation metrics, and the config snapshot. Epoch histories and search results, a summary, and validation predictions go in `results/bilstm/`. The saved winner is reloaded and its validation metrics verified before export. Re-running overwrites those outputs.
 
 Automatic device selection uses CUDA when available and CPU otherwise (including on Macs). Override with `--device cpu` or `--device cuda`; `--threads` controls CPU threads (default 4). Use `--dry-run` to inspect the grid without training. The full search can take substantially longer than TF-IDF.
+
+## Train DistilBERT
+
+Run the two validation searches separately:
+
+```bash
+.venv/bin/python -m deep_truth.train_distilbert --run distilbert_frozen
+.venv/bin/python -m deep_truth.train_distilbert --run distilbert_finetuned
+```
+
+Both use pretrained `distilbert-base-uncased` with the configured six-class head and shared tokenizer. The first run freezes every encoder parameter and trains the head with a constant learning rate. The second updates the encoder and head using linear decay with 10% warmup (rounded up to a whole step). Both use AdamW, cross-entropy on logits, gradient clipping, and seed 42. Each searches six settings from `config.yaml`, with validation-based checkpoint selection and early stopping under the protocol in `docs/approach.md`. Test data is not loaded. Every configuration starts from the original pretrained model; training does not resume a previous checkpoint.
+
+The first run downloads pretrained weights through Hugging Face; subsequent runs use the local cache. Training prints batch progress every 50 batches and metrics after each epoch. Automatic device selection uses CUDA, then Apple MPS, then CPU; override with `--device cpu`, `--device cuda`, or `--device mps`. `--threads` controls CPU threads (default 4). Full searches, particularly on CPU, can take substantial time.
+
+For a single configuration and one full epoch, append `--smoke-test`. These runs write separate `_smoke` directories and do not count as completed experiments. `--dry-run` describes the grid without loading data or downloading weights.
+
+Selected model and tokenizer files are saved together under `artifacts/<run_name>/model/` using Hugging Face `save_pretrained`. `artifacts/<run_name>/selection.json` records the winning epoch, settings, metrics, and config snapshot. Search histories, CSV summaries, and validation predictions go in `results/<run_name>/`. The serialized winner is reloaded and checked against its selected validation metrics before predictions are exported. Re-running overwrites these outputs. Reload the classifier with `DistilBertForSequenceClassification.from_pretrained(path)`; if continuing a frozen run manually, reapply the encoder freeze because `requires_grad` flags are not stored by `save_pretrained`.
+
+Offline automated tests use a tiny local DistilBERT and tokenizer to exercise both modes, verify encoder/head updates and learning-rate schedules, check early stopping, and reproduce predictions from saved checkpoints. These tests do not measure pretrained DistilBERT's LIAR performance.
 
 ## Shared model inputs
 
